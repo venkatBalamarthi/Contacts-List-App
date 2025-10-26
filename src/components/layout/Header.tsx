@@ -1,7 +1,8 @@
 import React from 'react'
 import {View, Text, ViewStyle, TextStyle, TouchableOpacity} from 'react-native'
-import getStyles from './styles';
 import {useNavigation} from '@react-navigation/native';
+import getStyles from '@components/layout/styles';
+import {NavigationScreenProp} from '@navigation/types';
 
 
 interface IHeaderProps {
@@ -20,7 +21,7 @@ const Header = ({
     onBackPress,
     showBackButton = false
 }: IHeaderProps) => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationScreenProp>();
     const handleBackPress = () => {
         if (onBackPress) {
             onBackPress();

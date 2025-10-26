@@ -1,6 +1,8 @@
 import React from 'react';
 import {TextInput, StyleSheet, ViewStyle, Dimensions} from 'react-native';
 import normalizeSize from '../../utils/commonUtils';
+import TextInputField from './TextInputField';
+import {COLORS} from '@config/colors';
 const {width} = Dimensions.get('window')
 
 interface SearchBarProps {
@@ -11,9 +13,9 @@ interface SearchBarProps {
 }
 
 const SearchBar = ({ value = '', onChangeText, containerStyle = {} }: SearchBarProps) => (
-  <TextInput
+  <TextInputField
     style={[styles.input, containerStyle]}
-    placeholder="Search contacts by name or number"
+    placeHolder="Search contacts by name or number"
     value={value}
     onChangeText={onChangeText}
   />
@@ -22,11 +24,11 @@ const SearchBar = ({ value = '', onChangeText, containerStyle = {} }: SearchBarP
 const styles = StyleSheet.create({
     input: {
         width: width - normalizeSize(40),
-        height: normalizeSize(50),
+        height: normalizeSize(40),
         margin: normalizeSize(10),
         borderWidth: 1,
         borderRadius: normalizeSize(12),
-        borderColor: '#B28155',
+        borderColor: COLORS.PRIMARY_COLOR,
         backgroundColor: 'white',
         paddingLeft: normalizeSize(12),
     }

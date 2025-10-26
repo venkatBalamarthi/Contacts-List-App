@@ -1,93 +1,30 @@
-import React, {ReactNode, useCallback, useEffect, useMemo, useState} from 'react'
-import {View, Text, SectionList, TouchableOpacity, Alert, Platform} from 'react-native'
-import getStyles from './styles'
-import ScreenLayout from '../../components/layout';
-import ContactItem from './ContactItem';
+import React, {useCallback, useMemo, useState} from 'react'
+import {View, Text, SectionList, TouchableOpacity} from 'react-native'
+import {useSelector} from 'react-redux';
+import getStyles from '@screens/ContactsList/styles'
+import ScreenLayout from '@components/layout/index';
+import ContactItem from '@screens/ContactsList/ContactItem';
 import {useNavigation} from '@react-navigation/native';
-import SearchBar from '../../components/shared/SearchBar';
-import {SCREEN_LABELS, SCREEN_NAMES, SCREEN_TITLES} from '../../constants';
-import {IContactItemProps} from '../../types/contactslist';
-import {useDispatch, useSelector} from 'react-redux';
-import {AppDispatch, RootState} from '../../store';
-import Contacts, {Contact} from 'react-native-contacts';
-import {gettContacts} from '../../store/slices/contactSlice';
-import {setLoader} from '../../store/slices/commonSlice';
-
-interface IRawContact {
-  recordID: string;
-  givenName: string;
-  familyName: string;
-  phoneNumbers: { number: string; label: string }[];
-  emailAddresses: { email: string; label: string }[];
-  postalAddresses: { street: string; city: string; region: string; postCode: string; country: string; label: string; state?: string }[];
-  [key: string]: any;
-}
-
-interface IAppContact {
-  id: string | number;
-  firstName: string;
-  lastName: string;
-  mobileNo: string;
-  email: string;
-  address: string;
-  notes?: string;
-  imageUri?: string;
-}
+import SearchBar from '@components/shared/SearchBar';
+import {SCREEN_LABELS, SCREEN_NAMES, SCREEN_TITLES} from '@constants/index';
+import {IContactItemProps} from '@types/contactslist.';
+import {NavigationScreenProp} from '@navigation/types';
+import useContacts from '@hooks/useContacts';
+import {RootState} from '@store/index';
 
 const isEnabledRemoteContacts: boolean = true;
 
-
-
-
 const ContactsList = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationScreenProp>();
     const contacts = useSelector((state: RootState) => state.contacts.contacts);
     const remoteContacts = useSelector((state: RootState) => state.contacts.remoteContacts);
-    const dispatch = useDispatch<AppDispatch>();
-
-     const mapContacts = (rawContacts: IRawContact[]): IAppContact[] => {
-            return rawContacts.map((contact, index) => ({
-                id: contact?.recordID,
-                firstName: contact.givenName || '',
-                lastName: contact.familyName || '',
-                mobileNo: contact.phoneNumbers?.[0]?.number || '',
-                email: contact.emailAddresses?.[0]?.email || '',
-                address: contact.postalAddresses?.[0]?.street || '',
-                notes: contact.note || '',
-                imageUri: contact.thumbnailPath || '',
-            }));
-        };
-    
-    useEffect(() => {
-        const fetchContacts = async () => {
-            try {
-                const permission = await Contacts.requestPermission();
-                dispatch(setLoader(true))
-                if (permission === 'authorized') {
-                    const allContacts = await Contacts.getAll();
-                    const result = mapContacts(allContacts);
-                    dispatch(gettContacts(result))
-                    dispatch(setLoader(false))
-
-                } else {
-                    dispatch(setLoader(false))
-                    Alert.alert('Permission Denied', 'Cannot access contacts without permission');
-                }
-            } catch (error) {
-                dispatch(setLoader(false))
-                Alert.alert('Error', 'Failed to load contacts');
-            } finally {
-            }
-        };
-
-        fetchContacts();
-    }, []);
+    useContacts();
 
     const styles = getStyles();
 
     const handleContactCard = (params: IContactItemProps) => {
-        navigation.navigate(SCREEN_NAMES.CONTACT_DETAILS,params)
+        navigation.navigate(SCREEN_NAMES.CONTACT_DETAILS, params)
     }
     const hanldeAddIcon = () => {
         navigation.navigate(SCREEN_NAMES.ADD_CONTACT_SCREEN);

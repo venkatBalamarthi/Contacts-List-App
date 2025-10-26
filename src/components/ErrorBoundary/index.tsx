@@ -1,6 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
-import {SCREEN_LABELS} from '../../constants';
+import {SCREEN_LABELS} from '@constants/index';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

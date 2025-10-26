@@ -5,9 +5,9 @@ import {IAppContact, IContactItemProps} from '../../types/contactslist';
 interface IContactState {
     contactDetails: {[key: string]: string};
     loading: boolean;
-    contacts: IContactItemProps[],
+    contacts: IContactItemProps[];
     error: string | null;
-    remoteContacts: IAppContact | null;
+    remoteContacts: IAppContact[];
 }
 
 const initialState: IContactState = {
@@ -15,7 +15,7 @@ const initialState: IContactState = {
     contacts: CONTACTS,
     loading: false,
     error: null,
-    remoteContacts: null
+    remoteContacts: [],
 };
 
 const contactsSlice = createSlice({
@@ -25,18 +25,19 @@ const contactsSlice = createSlice({
         setError(state, action: PayloadAction<string | null>) {
             state.error = action.payload;
         },
-        addContact(state, action: PayloadAction<typeof CONTACTS[0]>) {
-            state.contacts.push({id: state.contacts?.length + 1, ...action.payload});
+        addContact(state, action: PayloadAction<Omit<IContactItemProps, 'id'>>) {
+            const newId = Math.max(...state.contacts.map(c => parseInt(c.id.toString())), 0) + 1;
+            state.contacts.push({id: newId.toString(), ...action.payload});
         },
-        gettContacts(state, action: PayloadAction<typeof CONTACTS[0]>) {
+        getContacts(state, action: PayloadAction<IAppContact[]>) {
             state.remoteContacts = action.payload;
         },
-        addRemoteContact(state, action: PayloadAction<typeof CONTACTS[0]>) {
-            state.remoteContacts?.push(action.payload);
+        addRemoteContact(state, action: PayloadAction<IAppContact>) {
+            state.remoteContacts.push(action.payload);
         },
     },
 });
 
-export const {setError, addContact, gettContacts, addRemoteContact} = contactsSlice.actions;
+export const {setError, addContact, getContacts, addRemoteContact} = contactsSlice.actions;
 
 export default contactsSlice.reducer;

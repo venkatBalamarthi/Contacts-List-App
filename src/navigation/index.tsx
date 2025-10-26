@@ -1,6 +1,6 @@
 import React, {useState} from 'react'
-import AppLoader from '../components/modals/AppLoaders';
-import AppRouter from './AppRouter';
+import AppLoader from '@components/modals/AppLoaders';
+import AppRouter from '@navigation/AppRouter';
 import {SCREEN_NAMES} from '../constants';
 
 const Router = () => {

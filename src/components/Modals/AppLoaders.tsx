@@ -1,9 +1,9 @@
 import React from 'react';
 import {ActivityIndicator, Dimensions} from 'react-native';
 import ReactNativeModal from 'react-native-modal';
-import getStyles from './styles';
 import {useSelector} from 'react-redux';
-import {RootState} from '../../store';
+import getStyles from '@components/modals/styles';
+import {RootState} from '@store/index';
 const {width, height} = Dimensions.get('window');
 
 const AppLoader = () => {

@@ -100,7 +100,7 @@ const getStyles = () => {
             marginBottom: 8,
             paddingLeft: 10,
             borderWidth: 1,
-             borderColor: COLORS.RED,
+            borderColor: COLORS.RED,
             marginLeft:20
         },
         addContact: {

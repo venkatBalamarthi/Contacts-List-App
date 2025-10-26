@@ -1,7 +1,7 @@
 import React from 'react'
-import {StyleSheet, View, Dimensions, Text, TouchableOpacity, Image} from 'react-native'
-import {IContactItemProps} from '../../types/contactslist';
-import {COLORS} from '../../config/colors';
+import {StyleSheet, View, Dimensions, Text, TouchableOpacity, Image} from 'react-native';
+import {COLORS} from '@config/colors';
+import {IContactItemProps} from '@types/contactslist';
 const {width} = Dimensions.get('window')
 
 
@@ -15,19 +15,10 @@ interface IRenderItem {
 const ContactItem = ({item, onPress = () => {}, index = 0, isLastItem = false}: IRenderItem) => {
     const onPressClick = () => onPress(item);
     const name = item?.firstName[0]?.toUpperCase() + item?.lastName[0]?.toUpperCase();
+    const customStyle = customStyles(index, isLastItem);
     return (
         <TouchableOpacity
-            style={[styles.mainItem, {
-                borderBottomWidth: 1,
-                borderTopRightRadius: !index ? 12 : 0,
-                borderTopLeftRadius: !index ? 12 : 0,
-                borderBottomLeftRadius: isLastItem ? 12 : 0,
-                borderBottomRightRadius: isLastItem ? 12 : 0,
-                borderLeftWidth: 1,
-                borderRightWidth: 1,
-                borderTopWidth: index ? 0 : 1
-
-            }]}
+            style={[styles.mainItem, customStyle.mainContainer]}
             activeOpacity={1}
             onPress={onPressClick}
         >
@@ -85,3 +76,19 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     }
 })
+
+const customStyles = (index: number = 0, isLastItem: boolean = false) => {
+    return StyleSheet.create({
+        mainContainer: {
+            borderBottomWidth: 1,
+            borderTopRightRadius: !index ? 12 : 0,
+            borderTopLeftRadius: !index ? 12 : 0,
+            borderBottomLeftRadius: isLastItem ? 12 : 0,
+            borderBottomRightRadius: isLastItem ? 12 : 0,
+            borderLeftWidth: 1,
+            borderRightWidth: 1,
+            borderTopWidth: index ? 0 : 1
+
+        }
+    })
+}

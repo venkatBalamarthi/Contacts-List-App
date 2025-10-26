@@ -1,19 +1,21 @@
 
 import React, {Fragment, useCallback, useMemo, useState} from 'react'
 import {View, Image, TouchableOpacity, TextInput, Text} from 'react-native'
-import ScreenLayout from '../../components/layout';
-import getStyles from './styles';
-import {launchImageLibrary} from 'react-native-image-picker';
-import {isValidEmail, mapContacts} from '../../utils/commonUtils';
-import {BUTTON_LABLES, DETAILS_FILEDS, FIEDLS, SCREEN_TITLES} from '../../constants';
-import debounce from 'lodash/debounce';
-import {useDispatch} from 'react-redux';
-import {AppDispatch} from '../../store';
-import {addContact, addRemoteContact} from '../../store/slices/contactSlice';
 import {useNavigation} from '@react-navigation/native';
 import Contacts from 'react-native-contacts';
-import {IContact, IUpdateContactInput} from '../../types/contactslist';
-import {setLoader} from '../../store/slices/commonSlice';
+import {useDispatch} from 'react-redux';
+import ScreenLayout from '@components/layout/index';
+import getStyles from '@screens/AddContactScreen/styles';
+import {launchImageLibrary} from 'react-native-image-picker';
+import {isValidEmail, isValidMobileNumber} from '@utils/commonUtils';
+import {BUTTON_LABLES, DETAILS_FILEDS, FIEDLS, SCREEN_TITLES} from '@constants/index';
+import debounce from 'lodash/debounce';
+import {AppDispatch} from '@store/index';
+import {addContact, addRemoteContact} from '@store/slices/contactSlice';
+import {IContact, IUpdateContactInput} from '@/types/contactslist';
+import {setLoader} from '@store/slices/commonSlice';
+import TextInputField from '@components/shared/TextInputField';
+import {mapContacts, updateContact} from '@utils/contactUtils';
 const NUMERIC = 'numeric';
 const MOBILENO = 'mobileNo'
 
@@ -44,6 +46,7 @@ interface IProfileData {
 
 const DebouncedTextInput = React.memo(({field, value, onChange, error}: any) => {
     const styles = getStyles();
+    const isMobileNumber = field === 'mobileNo';
   return (
     <>
       <TextInput
@@ -52,7 +55,7 @@ const DebouncedTextInput = React.memo(({field, value, onChange, error}: any) => 
         onChangeText={(text) => onChange(field, text)}
         style={error ? styles.textInputErrorStyle : styles.textInputStyle}
         keyboardType={field === MOBILENO ? NUMERIC : 'default'}
-        maxLength={30}
+        maxLength={isMobileNumber ? 10 : 30}
       />
       {error && <Text style={styles.error}>{`${DETAILS_FILEDS[field]} is required`}</Text>}
     </>
@@ -68,24 +71,7 @@ const AddContactScreen = () => {
     const navigation = useNavigation();
     const styles = getStyles();
 
-    const updateContact = (contact: IContact, updates: IUpdateContactInput): IContact => {
-        return {
-            ...contact,
-            givenName: updates.firstName || contact.givenName,
-            familyName: updates.lastName || contact.familyName,
-            phoneNumbers: updates.mobileNo
-                ? [{number: updates.mobileNo, label: 'mobile'}]
-                : contact.phoneNumbers,
-            emailAddresses: updates.email
-                ? [{email: updates.email, label: 'work'}]
-                : contact.emailAddresses,
-            postalAddresses: updates.address
-                ? [{...contact.postalAddresses[0], street: updates.address}]
-                : contact.postalAddresses,
-        };
-    };
-
-
+    
     const pickImage = useCallback(() => {
         launchImageLibrary(
             {mediaType: 'photo', quality: 1},
@@ -115,6 +101,9 @@ const AddContactScreen = () => {
             if (field === 'email' && contactDetails.email && !isValidEmail(contactDetails.email)) {
                 tempErrors[field] = `${DETAILS_FILEDS[field]} is required`;
             }
+            if (field === 'mobileNo' && contactDetails.mobileNo && !isValidMobileNumber(contactDetails.mobileNo)) {
+                tempErrors[field] = `Enter a valid ${DETAILS_FILEDS[field]}`;
+            }
         });
         const errorsData = Object.values(tempErrors || {})?.length;
         if (errorsData) {
@@ -137,7 +126,7 @@ const AddContactScreen = () => {
 
     const debouncedUpdate = useMemo(
         () =>
-            debounce((field: string, text: string) => {
+            debounce((field: string = '', text: string = '') => {
                 setContactDetails((prev) => ({...prev, [field]: text}));
                 setErrors((prev) => {
                     if (prev[field]) return {...prev, [field]: ''};
@@ -151,7 +140,7 @@ const AddContactScreen = () => {
     const handleInputChange = useCallback((field: string, text: string) => {
         setLocalInput((prev) => ({...prev, [field]: text}));
         debouncedUpdate(field, text);
-    }, []);
+    }, [debouncedUpdate]);
 
     return (
         <ScreenLayout
@@ -170,14 +159,19 @@ const AddContactScreen = () => {
                 </View>
                 <View style={styles.textFieldView}>
                     {FIEDLS?.map((field: string,) => {
+                        const keyboardType = field === MOBILENO ? NUMERIC : 'default';
+                        const isMobileNumber = field === 'mobileNo';
+                        const hanldeOnChangeText = (text: string = '') => handleInputChange(field,text);
                         return (
                             <Fragment key={`${field}`}>
-                                <DebouncedTextInput
+                                <TextInputField
                                     key={field}
-                                    field={field}
                                     value={localInput[field]}
-                                    onChange={handleInputChange}
-                                    error={!!errors[field]}
+                                    onChangeText={hanldeOnChangeText}
+                                    error={errors[field]}
+                                    placeHolder={DETAILS_FILEDS[field]}
+                                    keyboardType={keyboardType}
+                                    maxLength={isMobileNumber ? 10 : 30}
                                 />
                             </Fragment>
                         )
