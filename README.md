@@ -13,6 +13,8 @@ A modern React Native application for managing contacts with a clean, intuitive 
 - **Cross-Platform**: Runs seamlessly on both iOS and Android
 - **Offline Support**: Local storage with AsyncStorage
 - **Permission Handling**: Proper contact permission management
+- **Custom Hooks**: Modular business logic with reusable hooks
+- **Debounced Input**: Optimized form input with debouncing for better performance
 
 ## 🏗️ Architecture
 
@@ -24,12 +26,14 @@ src/
 │   ├── ErrorBoundary/   # Error handling wrapper
 │   ├── layout/          # Layout components (Header, Footer)
 │   ├── modals/          # Modal components and loaders
-│   └── shared/          # Shared components (SearchBar)
+│   └── shared/          # Shared components (SearchBar, TextInputField)
 ├── config/              # Configuration files
 │   ├── colors.ts        # Color palette
 │   ├── labels.ts        # UI labels and text
 │   └── storage.ts       # Storage configuration
 ├── constants/           # App constants and static data
+├── hooks/               # Custom React hooks
+│   └── useContacts.ts   # Contact management hook
 ├── navigation/          # Navigation configuration
 │   ├── AppRouter.tsx    # Main navigation setup
 │   ├── RootNavigation.tsx # Navigation utilities
@@ -51,14 +55,65 @@ src/
 
 ### Core Architecture Patterns
 
-#### 1. **Layered Architecture**
+#### 1. **Custom Hooks Pattern**
+The app leverages custom hooks for business logic separation and reusability:
+
+```typescript
+// useContacts Hook - Handles contact fetching and permissions
+const useContacts = () => {
+    const dispatch = useDispatch<AppDispatch>();
+
+    useEffect(() => {
+        const fetchContacts = async () => {
+            try {
+                const permission = await Contacts.requestPermission();
+                dispatch(setLoader(true))
+                if (permission === 'authorized') {
+                    const allContacts = await Contacts.getAll();
+                    const result = mapContacts(allContacts);
+                    dispatch(getContacts(result))
+                } else {
+                    Alert.alert('Permission Denied', 'Cannot access contacts without permission');
+                }
+            } catch (error) {
+                console.log('Error fetching contacts:', error);
+                Alert.alert('Error', 'Failed to load contacts');
+            } finally {
+                dispatch(setLoader(false))
+            }
+        };
+        fetchContacts();
+    }, [dispatch]);
+}
+```
+
+#### 2. **Modern Import Style with Path Aliases**
+The project uses TypeScript path mapping for clean, maintainable imports:
+
+```typescript
+// Modern import patterns used throughout the app
+import ScreenLayout from '@components/layout/index';
+import SearchBar from '@components/shared/SearchBar';
+import TextInputField from '@components/shared/TextInputField';
+import {SCREEN_LABELS, SCREEN_NAMES, SCREEN_TITLES} from '@constants/index';
+import {IContactItemProps} from '@types/contactslist';
+import {NavigationScreenProp} from '@navigation/types';
+import useContacts from '@hooks/useContacts';
+import {RootState, AppDispatch} from '@store/index';
+import {addContact, addRemoteContact} from '@store/slices/contactSlice';
+import {setLoader} from '@store/slices/commonSlice';
+import {mapContacts, updateContact} from '@utils/contactUtils';
+import {isValidEmail, isValidMobileNumber} from '@utils/commonUtils';
+```
+
+#### 3. **Layered Architecture**
 ```
 ┌─────────────────────────────────────┐
 │           Presentation Layer        │
 │        (Screens & Components)       │
 ├─────────────────────────────────────┤
 │           Business Logic Layer      │
-│         (Redux Store & Sagas)       │
+│      (Custom Hooks & Redux)        │
 ├─────────────────────────────────────┤
 │           Service Layer             │
 │        (API & Device Services)      │
@@ -68,37 +123,64 @@ src/
 └─────────────────────────────────────┘
 ```
 
-#### 2. **Component-Based Architecture**
+#### 4. **Component-Based Architecture**
 - **Atomic Design Principles**: Components organized from atoms to organisms
 - **Separation of Concerns**: Each component has a single responsibility
 - **Reusability**: Shared components in `src/components/shared/`
 - **Screen-Specific Components**: Feature-specific components co-located with screens
 
-#### 3. **State Management Pattern**
+#### 5. **State Management Pattern**
 - **Redux Toolkit**: Modern Redux with simplified boilerplate
 - **Slice Pattern**: Feature-based state organization
 - **Immutable Updates**: Using Immer under the hood
 - **Type Safety**: Full TypeScript integration with typed actions and selectors
 
-#### 4. **Navigation Architecture**
+#### 6. **Navigation Architecture**
 - **Stack-Based Navigation**: React Navigation v7 with native stack
 - **Centralized Route Management**: All routes defined in `RouterConstants.tsx`
 - **Type-Safe Navigation**: TypeScript navigation parameter types
 - **Deep Linking Ready**: Prepared for URL-based navigation
 
-#### 5. **Data Flow Pattern**
-```
-User Action → Component → Redux Action → Reducer → State Update → Component Re-render
-```
-
 ## 🎯 Design Patterns
 
-### 1. **Container/Presentational Pattern**
+### 1. **Custom Hooks Pattern**
+```typescript
+// Custom hook for contact operations
+const useContacts = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const permission = await Contacts.requestPermission();
+        dispatch(setLoader(true));
+        
+        if (permission === 'authorized') {
+          const allContacts = await Contacts.getAll();
+          const result = mapContacts(allContacts);
+          dispatch(getContacts(result));
+        } else {
+          Alert.alert('Permission Denied', 'Cannot access contacts without permission');
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to load contacts');
+      } finally {
+        dispatch(setLoader(false));
+      }
+    };
+    
+    fetchContacts();
+  }, [dispatch]);
+};
+```
+
+### 2. **Container/Presentational Pattern**
 ```typescript
 // Container Component (Smart)
 const ContactsList = () => {
-  const contacts = useSelector(state => state.contacts.contacts);
-  const dispatch = useDispatch();
+  const contacts = useSelector((state: RootState) => state.contacts.contacts);
+  const remoteContacts = useSelector((state: RootState) => state.contacts.remoteContacts);
+  useContacts(); // Custom hook usage
   
   return <ContactsListView contacts={contacts} onAddContact={handleAdd} />;
 };
@@ -114,7 +196,51 @@ const ContactsListView = ({ contacts, onAddContact }) => {
 };
 ```
 
-### 2. **Higher-Order Component (HOC) Pattern**
+### 3. **Debounced Input Pattern**
+```typescript
+// Optimized form input with debouncing
+const debouncedUpdate = useMemo(
+  () =>
+    debounce((field: string = '', text: string = '') => {
+      setContactDetails((prev) => ({...prev, [field]: text}));
+      setErrors((prev) => {
+        if (prev[field]) return {...prev, [field]: ''};
+        return prev;
+      });
+    }, 400),
+  []
+);
+
+const handleInputChange = useCallback((field: string, text: string) => {
+  setLocalInput((prev) => ({...prev, [field]: text}));
+  debouncedUpdate(field, text);
+}, [debouncedUpdate]);
+```
+
+### 4. **Memoized Components Pattern**
+```typescript
+// Performance-optimized component with React.memo
+const DebouncedTextInput = React.memo(({field, value, onChange, error}: any) => {
+  const styles = getStyles();
+  const isMobileNumber = field === 'mobileNo';
+  
+  return (
+    <>
+      <TextInput
+        placeholder={DETAILS_FILEDS[field]}
+        value={value}
+        onChangeText={(text) => onChange(field, text)}
+        style={error ? styles.textInputErrorStyle : styles.textInputStyle}
+        keyboardType={field === 'mobileNo' ? 'numeric' : 'default'}
+        maxLength={isMobileNumber ? 10 : 30}
+      />
+      {error && <Text style={styles.error}>{`${DETAILS_FILEDS[field]} is required`}</Text>}
+    </>
+  );
+});
+```
+
+### 5. **Higher-Order Component (HOC) Pattern**
 ```typescript
 // Layout HOC
 const ScreenLayout = ({ children, headerLabel, showBackButton }) => (
@@ -126,22 +252,7 @@ const ScreenLayout = ({ children, headerLabel, showBackButton }) => (
 );
 ```
 
-### 3. **Custom Hooks Pattern**
-```typescript
-// Custom hook for contact operations
-const useContacts = () => {
-  const dispatch = useDispatch();
-  const contacts = useSelector(state => state.contacts.contacts);
-  
-  const addContact = useCallback((contact) => {
-    dispatch(addContactAction(contact));
-  }, [dispatch]);
-  
-  return { contacts, addContact };
-};
-```
-
-### 4. **Factory Pattern**
+### 6. **Factory Pattern**
 ```typescript
 // Contact mapping factory
 const ContactFactory = {
@@ -160,11 +271,11 @@ const ContactFactory = {
 };
 ```
 
-### 5. **Observer Pattern**
+### 7. **Observer Pattern**
 ```typescript
 // Redux state subscription
 const ContactsList = () => {
-  const contacts = useSelector(state => state.contacts.contacts);
+  const contacts = useSelector((state: RootState) => state.contacts.contacts);
   
   useEffect(() => {
     // Component automatically re-renders when contacts state changes
@@ -172,7 +283,7 @@ const ContactsList = () => {
 };
 ```
 
-### 6. **Strategy Pattern**
+### 8. **Strategy Pattern**
 ```typescript
 // Different contact sources
 const ContactStrategies = {
@@ -186,20 +297,33 @@ const getContacts = (strategy: keyof typeof ContactStrategies) => {
 };
 ```
 
-### 7. **Memoization Pattern**
+### 9. **Memoization Pattern**
 ```typescript
 // Performance optimization with useMemo
 const contactSections = useMemo(() => {
-  const sections = {};
-  contacts.forEach(contact => {
-    const firstLetter = contact.firstName[0].toUpperCase();
+  const sections: any = {};
+  const list = isEnabledRemoteContacts ? remoteContacts : contacts;
+  
+  list?.forEach((contactItem: any) => {
+    const firstLetter: string = contactItem?.firstName[0]?.toUpperCase()?.trim() || '';
     if (!sections[firstLetter]) {
-      sections[firstLetter] = { title: firstLetter, data: [] };
+      sections[firstLetter] = {
+        title: firstLetter,
+        data: [contactItem],
+      };
+    } else {
+      sections[firstLetter].data.push(contactItem);
     }
-    sections[firstLetter].data.push(contact);
   });
-  return Object.values(sections).sort((a, b) => a.title.localeCompare(b.title));
-}, [contacts]);
+  
+  const results = Object.values(sections);
+  results.sort((a: any, b: any) => a.title.localeCompare(b.title));
+  results.forEach((sectionData) => {
+    sectionData?.data.sort((a: any, b: any) => a.firstName.localeCompare(b.firstName));
+  });
+  
+  return results;
+}, [contacts, remoteContacts]);
 ```
 
 ## 🚀 Technical Stack
@@ -229,7 +353,7 @@ const contactSections = useMemo(() => {
 ### Utilities & Validation
 - **axios 1.12.2** - HTTP client for API calls
 - **email-validator 2.0.4** - Email format validation
-- **lodash 4.17.21** - Utility functions library
+- **lodash 4.17.21** - Utility functions library (debounce, etc.)
 
 ### Development Tools
 - **ESLint** - Code linting with React Native config
@@ -293,6 +417,30 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 # Clean Android build (if needed)
 cd android && ./gradlew clean && cd ..
+```
+
+### TypeScript Configuration
+
+The project uses path mapping for clean imports. The `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@components/*": ["components/*"],
+      "@screens/*": ["screens/*"],
+      "@navigation/*": ["navigation/*"],
+      "@store/*": ["store/*"],
+      "@hooks/*": ["hooks/*"],
+      "@utils/*": ["utils/*"],
+      "@types/*": ["types/*"],
+      "@constants/*": ["constants/*"],
+      "@config/*": ["config/*"],
+      "@services/*": ["services/*"]
+    }
+  }
+}
 ```
 
 ### Running the Application
@@ -386,8 +534,9 @@ Add to `ios/contacts_list_app/Info.plist`:
 - **Features**:
   - Alphabetical sectioning with sticky headers
   - Real-time search functionality
-  - Device contact integration
+  - Device contact integration via `useContacts` hook
   - Floating action button for quick add
+  - Remote/local contact switching capability
 - **Navigation**: Entry point, navigates to details or add contact
 
 ### 2. **Add Contact Screen** (`AddContactScreen`)
@@ -397,6 +546,8 @@ Add to `ios/contacts_list_app/Info.plist`:
   - Image picker integration (camera/gallery)
   - Email format validation
   - Required field validation
+  - Debounced input for better performance
+  - Custom TextInputField components
 - **Navigation**: Accessible from contacts list, returns after save
 
 ### 3. **Contact Details Screen** (`ContactDetails`)
@@ -416,7 +567,8 @@ Add to `ios/contacts_list_app/Info.plist`:
 │ • Search        │    │ • View Info     │    │ • Form Input    │
 │ • Alphabetical  │    │ • Edit (Future) │    │ • Image Picker  │
 │ • Device Sync   │    │ • Call/Message  │    │ • Validation    │
-│ • FAB Add       │    │                 │    │                 │
+│ • FAB Add       │    │                 │    │ • Debounced     │
+│ • useContacts   │    │                 │    │   Input         │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
@@ -432,109 +584,174 @@ Add to `ios/contacts_list_app/Info.plist`:
 
 ## 🎯 Key Enhancements & Features
 
-### 1. **Advanced Contact Organization**
+### 1. **Custom Hooks Implementation**
+```typescript
+// useContacts Hook - Centralized contact management
+const useContacts = () => {
+    const dispatch = useDispatch<AppDispatch>();
+
+    useEffect(() => {
+        const fetchContacts = async () => {
+            try {
+                const permission = await Contacts.requestPermission();
+                dispatch(setLoader(true))
+                if (permission === 'authorized') {
+                    const allContacts = await Contacts.getAll();
+                    const result = mapContacts(allContacts as any);
+                    dispatch(getContacts(result))
+                } else {
+                    Alert.alert('Permission Denied', 'Cannot access contacts without permission');
+                }
+            } catch (error) {
+                console.log('Error fetching contacts:', error);
+                Alert.alert('Error', 'Failed to load contacts');
+            }
+            finally {
+                dispatch(setLoader(false))
+            }
+        };
+        fetchContacts();
+    }, [dispatch]);
+}
+```
+
+### 2. **Advanced Contact Organization**
 ```typescript
 // Alphabetical sectioning with optimized rendering
 const contactSections = useMemo(() => {
-  const sections = {};
-  contacts.forEach(contact => {
-    const firstLetter = contact.firstName[0]?.toUpperCase() || '#';
+  const sections: any = {};
+  const list = isEnabledRemoteContacts ? remoteContacts : contacts;
+  
+  list?.forEach((contactItem: any) => {
+    const firstLetter: string = contactItem?.firstName[0]?.toUpperCase()?.trim() || '';
     if (!sections[firstLetter]) {
-      sections[firstLetter] = { title: firstLetter, data: [] };
+      sections[firstLetter] = {
+        title: firstLetter,
+        data: [contactItem],
+      };
+    } else {
+      sections[firstLetter].data.push(contactItem);
     }
-    sections[firstLetter].data.push(contact);
   });
   
-  return Object.values(sections)
-    .sort((a, b) => a.title.localeCompare(b.title))
-    .map(section => ({
-      ...section,
-      data: section.data.sort((a, b) => a.firstName.localeCompare(b.firstName))
-    }));
-}, [contacts]);
+  const results = Object.values(sections);
+  results.sort((a: any, b: any) => a.title.localeCompare(b.title));
+  results.forEach((sectionData) => {
+    sectionData?.data.sort((a: any, b: any) => a.firstName.localeCompare(b.firstName));
+  });
+  
+  return results;
+}, [contacts, remoteContacts]);
 ```
 
-### 2. **Real-time Search with Debouncing**
+### 3. **Real-time Search with Filtering**
 ```typescript
 const filteredSections = useMemo(() => {
-  if (!searchQuery.length) return contactSections;
-  
-  const query = searchQuery.trim().toLowerCase();
-  return contactSections
-    .map(section => ({
-      ...section,
-      data: section.data.filter(contact =>
-        contact.firstName.toLowerCase().includes(query) ||
-        contact.lastName.toLowerCase().includes(query) ||
-        contact.mobileNo.includes(query)
-      )
-    }))
-    .filter(section => section.data.length > 0);
+  if (!searchQuery?.length) return contactSections;
+
+  const query = searchQuery.trim().toLowerCase() || '#';
+
+  return contactSections.map(section => {
+    const filteredData = section.data.filter(contact =>
+      contact.firstName.toLowerCase().includes(query) ||
+      contact.mobileNo.toLowerCase().includes(query)
+    );
+    return {...section, data: filteredData};
+  }).filter(section => section.data.length > 0);
 }, [searchQuery, contactSections]);
 ```
 
-### 3. **Device Integration with Permission Handling**
+### 4. **Debounced Form Input**
+```typescript
+const debouncedUpdate = useMemo(
+  () =>
+    debounce((field: string = '', text: string = '') => {
+      setContactDetails((prev) => ({...prev, [field]: text}));
+      setErrors((prev) => {
+        if (prev[field]) return {...prev, [field]: ''};
+        return prev;
+      });
+    }, 400),
+  []
+);
+
+const handleInputChange = useCallback((field: string, text: string) => {
+  setLocalInput((prev) => ({...prev, [field]: text}));
+  debouncedUpdate(field, text);
+}, [debouncedUpdate]);
+```
+
+### 5. **Device Integration with Permission Handling**
 ```typescript
 const fetchContacts = async () => {
   try {
     const permission = await Contacts.requestPermission();
+    dispatch(setLoader(true));
+    
     if (permission === 'authorized') {
       const allContacts = await Contacts.getAll();
-      const mappedContacts = mapContacts(allContacts);
-      dispatch(setContacts(mappedContacts));
+      const result = mapContacts(allContacts);
+      dispatch(getContacts(result));
     } else {
       Alert.alert('Permission Denied', 'Cannot access contacts without permission');
     }
   } catch (error) {
     Alert.alert('Error', 'Failed to load contacts');
+  } finally {
+    dispatch(setLoader(false));
   }
 };
 ```
 
-### 4. **Performance Optimizations**
-- **Memoized Components**: Using `React.memo` for contact items
+### 6. **Performance Optimizations**
+- **Memoized Components**: Using `React.memo` for contact items and form fields
 - **Virtualized Lists**: SectionList with optimized rendering
 - **Efficient Key Extraction**: Proper key props for list items
 - **Debounced Search**: Preventing excessive re-renders
-- **Lazy Loading**: Components loaded on demand
+- **Custom Hooks**: Separating business logic from UI components
+- **Path Aliases**: Clean import statements for better maintainability
 
-### 5. **Form Validation System**
+### 7. **Form Validation System**
 ```typescript
-const validateEmail = (email: string): boolean => {
-  return emailValidator.validate(email);
-};
-
-const validateForm = (formData: IContactForm): ValidationErrors => {
-  const errors: ValidationErrors = {};
+const validateForm = (contactDetails: IProfileData): IProfileData => {
+  let tempErrors: IProfileData = {};
   
-  if (!formData.firstName.trim()) {
-    errors.firstName = 'First name is required';
-  }
+  FIEDLS.forEach(field => {
+    if (!(contactDetails[field]?.trim()?.length)) {
+      tempErrors[field] = `${DETAILS_FILEDS[field]} is required`;
+    }
+    if (field === 'email' && contactDetails.email && !isValidEmail(contactDetails.email)) {
+      tempErrors[field] = `${DETAILS_FILEDS[field]} is required`;
+    }
+    if (field === 'mobileNo' && contactDetails.mobileNo && !isValidMobileNumber(contactDetails.mobileNo)) {
+      tempErrors[field] = `Enter a valid ${DETAILS_FILEDS[field]}`;
+    }
+  });
   
-  if (formData.email && !validateEmail(formData.email)) {
-    errors.email = 'Please enter a valid email address';
-  }
-  
-  return errors;
+  return tempErrors;
 };
 ```
 
-### 6. **Image Management System**
+### 8. **Image Management System**
 ```typescript
-const handleImagePicker = () => {
-  const options = {
-    mediaType: 'photo',
-    quality: 0.8,
-    maxWidth: 300,
-    maxHeight: 300,
-  };
-  
-  ImagePicker.showImagePicker(options, (response) => {
-    if (response.uri) {
-      setImageUri(response.uri);
+const pickImage = useCallback(() => {
+  launchImageLibrary(
+    {mediaType: 'photo', quality: 1},
+    (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Error: ', response.errorMessage);
+      } else {
+        const uri = response?.assets[0].uri;
+        setContactDetails({
+          ...contactDetails,
+          imageUri: uri || '',
+        });
+      }
     }
-  });
-};
+  );
+}, [contactDetails]);
 ```
 
 ## 🔮 Future Enhancements
@@ -605,13 +822,53 @@ class ContactsAPI {
 }
 ```
 
+#### Additional Custom Hooks
+```typescript
+// useDebounce Hook
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// usePermissions Hook
+const usePermissions = () => {
+  const [contactPermission, setContactPermission] = useState<string>('');
+  const [cameraPermission, setCameraPermission] = useState<string>('');
+
+  const requestContactPermission = async () => {
+    const permission = await Contacts.requestPermission();
+    setContactPermission(permission);
+    return permission;
+  };
+
+  return {
+    contactPermission,
+    cameraPermission,
+    requestContactPermission,
+  };
+};
+```
+
 #### Testing Strategy
 ```typescript
 // Unit tests with Jest
-describe('ContactsList', () => {
-  it('should render contacts in alphabetical order', () => {
-    const { getByText } = render(<ContactsList />);
-    expect(getByText('A')).toBeTruthy();
+describe('useContacts Hook', () => {
+  it('should fetch contacts on mount', async () => {
+    const { result } = renderHook(() => useContacts());
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith(setLoader(true));
+    });
   });
 });
 
@@ -665,12 +922,19 @@ rm -rf ~/.gradle/caches/
 $ANDROID_HOME/emulator/emulator -avd <AVD_NAME> -wipe-data
 ```
 
-#### 4. **Permission Issues**
+#### 4. **TypeScript Path Mapping Issues**
+```bash
+# Ensure Metro config includes path mapping
+# Check metro.config.js for resolver configuration
+# Restart Metro bundler after tsconfig changes
+```
+
+#### 5. **Permission Issues**
 - **Android**: Ensure permissions are declared in `AndroidManifest.xml`
 - **iOS**: Add usage descriptions to `Info.plist`
-- **Runtime**: Handle permission requests gracefully
+- **Runtime**: Handle permission requests gracefully with custom hooks
 
-#### 5. **Contact Access Issues**
+#### 6. **Contact Access Issues**
 ```typescript
 // Debug contact permissions
 const checkContactPermission = async () => {
@@ -678,100 +942,3 @@ const checkContactPermission = async () => {
   console.log('Contact permission status:', permission);
   
   if (permission === 'undefined') {
-    const newPermission = await Contacts.requestPermission();
-    console.log('New permission status:', newPermission);
-  }
-};
-```
-
-### Performance Debugging
-
-#### Memory Leaks
-```typescript
-// Use React DevTools Profiler
-import { Profiler } from 'react';
-
-const onRenderCallback = (id, phase, actualDuration) => {
-  console.log('Component render time:', { id, phase, actualDuration });
-};
-
-<Profiler id="ContactsList" onRender={onRenderCallback}>
-  <ContactsList />
-</Profiler>
-```
-
-#### Bundle Size Analysis
-```bash
-# Analyze bundle size
-npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android-bundle.js --sourcemap-output android-bundle.map
-
-# Use bundle analyzer
-npm install -g react-native-bundle-visualizer
-react-native-bundle-visualizer
-```
-
-## 📊 Performance Metrics
-
-### Target Performance Goals
-- **App Launch Time**: < 3 seconds
-- **Screen Transition**: < 300ms
-- **Search Response**: < 100ms
-- **Contact Load**: < 2 seconds for 1000+ contacts
-- **Memory Usage**: < 100MB baseline
-- **Bundle Size**: < 50MB
-
-### Monitoring Tools
-- **Flipper**: Real-time debugging and performance monitoring
-- **React DevTools**: Component profiling and state inspection
-- **Metro**: Bundle analysis and optimization
-- **Xcode Instruments**: iOS performance profiling
-- **Android Studio Profiler**: Android performance analysis
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-### Development Workflow
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Follow** coding standards (ESLint + Prettier)
-4. **Write** tests for new features
-5. **Commit** changes (`git commit -m 'Add amazing feature'`)
-6. **Push** to branch (`git push origin feature/amazing-feature`)
-7. **Open** a Pull Request
-
-### Code Standards
-- **TypeScript**: Strict mode enabled
-- **ESLint**: Follow React Native configuration
-- **Prettier**: Consistent code formatting
-- **Conventional Commits**: Use semantic commit messages
-- **Testing**: Maintain test coverage above 80%
-
-### Pull Request Guidelines
-- Provide clear description of changes
-- Include screenshots for UI changes
-- Update documentation if needed
-- Ensure all tests pass
-- Request review from maintainers
-
-## 📞 Contact & Support
-
-**Developer**: Venkatesh Balamarthi  
-**Repository**: [https://github.com/venkatBalamarthi/Contacts-List-App](https://github.com/venkatBalamarthi/Contacts-List-App)  
-**Issues**: [GitHub Issues](https://github.com/venkatBalamarthi/Contacts-List-App/issues)
-
-### Getting Help
-- **Documentation**: Check this README and inline code comments
-- **React Native Docs**: [https://reactnative.dev/docs/getting-started](https://reactnative.dev/docs/getting-started)
-- **React Navigation**: [https://reactnavigation.org/docs/getting-started](https://reactnavigation.org/docs/getting-started)
-- **Redux Toolkit**: [https://redux-toolkit.js.org/introduction/getting-started](https://redux-toolkit.js.org/introduction/getting-started)
-
----
-
-**Built with ❤️ using React Native, TypeScript, and Redux Toolkit**
-
-*Last Updated: October 2025*
