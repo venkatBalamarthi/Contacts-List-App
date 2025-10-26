@@ -1,12 +1,15 @@
-import {StyleSheet} from "react-native"
+import {StyleSheet, Dimensions} from "react-native";
+import {COLORS} from "../../config/colors";
+const {width, height} = Dimensions.get('window')
 
 const getStyles = () => {
     return StyleSheet.create({
         main: {
-            flex: 1,
+            width,
+            height,
+            backgroundColor: COLORS.SECONDARY_COLOR
         },
         topContainer: {
-            backgroundColor: '#F6ECE2',
             alignItems: 'center'
         },
         profileImg: {
@@ -15,11 +18,11 @@ const getStyles = () => {
             borderRadius: 50,
             alignSelf: 'center',
             marginTop: 20,
-            backgroundColor: 'white',
+            backgroundColor: COLORS.WHITE,
             borderWidth: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            borderColor: '#B28155'
+            borderColor: COLORS.PRIMARY_COLOR
         },
         profileContainerView: {
             alignItems: 'center',
@@ -52,11 +55,11 @@ const getStyles = () => {
             borderRadius: 4,
             paddingHorizontal: 50,
             paddingVertical: 8,
-            backgroundColor: 'white',
-            borderColor: '#D29965',
+            backgroundColor: COLORS.WHITE,
+            borderColor: COLORS.PRIMARY_COLOR,
         },
         profileDetails: {
-            backgroundColor: '#F6ECE2',
+            backgroundColor: COLORS.SECONDARY_COLOR,
             marginHorizontal: 40,
             marginTop: 20
         },
@@ -66,8 +69,13 @@ const getStyles = () => {
             paddingHorizontal: 8,
             paddingVertical: 12,
             borderBottomWidth: 1,
-            borderColor: '#D29965',
-            backgroundColor: 'white'
+            borderColor: COLORS.PRIMARY_COLOR,
+            backgroundColor: COLORS.WHITE
+        },
+        profileText: {
+            fontSize: 30,
+            fontWeight: 'bold',
+            color: COLORS.PRIMARY_COLOR,
         }
     })
 }

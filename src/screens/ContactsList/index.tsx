@@ -1,140 +1,88 @@
-import React, {ReactNode, useCallback, useMemo, useState} from 'react'
-import {View, FlatList, Text, SectionList, TouchableOpacity} from 'react-native'
+import React, {ReactNode, useCallback, useEffect, useMemo, useState} from 'react'
+import {View, Text, SectionList, TouchableOpacity, Alert, Platform} from 'react-native'
 import getStyles from './styles'
-import ScreenLayout from '../../appconfig/ScreenLayout';
-import ContactItem from '../../components/ContactItem';
-import SearchBar from '../../components/SearchBar';
+import ScreenLayout from '../../components/layout';
+import ContactItem from './ContactItem';
 import {useNavigation} from '@react-navigation/native';
-import {SCREEN_NAMES} from '../../constants/screenNames';
+import SearchBar from '../../components/shared/SearchBar';
+import {SCREEN_LABELS, SCREEN_NAMES, SCREEN_TITLES} from '../../constants';
+import {IContactItemProps} from '../../types/contactslist';
+import {useDispatch, useSelector} from 'react-redux';
+import {AppDispatch, RootState} from '../../store';
+import Contacts, {Contact} from 'react-native-contacts';
+import {gettContacts} from '../../store/slices/contactSlice';
+import {setLoader} from '../../store/slices/commonSlice';
 
-interface IContactItemProps {
-    id: string;
-    firstName: string;
-    lastName: string;
-    mobileNo: string;
-    [key: string]: string | number | Date | boolean;
+interface IRawContact {
+  recordID: string;
+  givenName: string;
+  familyName: string;
+  phoneNumbers: { number: string; label: string }[];
+  emailAddresses: { email: string; label: string }[];
+  postalAddresses: { street: string; city: string; region: string; postCode: string; country: string; label: string; state?: string }[];
+  [key: string]: any;
 }
 
-interface IRenderItem {
-    item: IContactItemProps,
-    index: number;
+interface IAppContact {
+  id: string | number;
+  firstName: string;
+  lastName: string;
+  mobileNo: string;
+  email: string;
+  address: string;
+  notes?: string;
+  imageUri?: string;
 }
 
-const CONTACTS = [
-    {
-        "id": 1,
-        "firstName": 'Venkatesh',
-        "lastName": 'Balamarthi',
-        "mobileNo": '8812345675',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 2,
-        "firstName": 'Venkat',
-        "lastName": 'B',
-        "mobileNo": '8812345671',
-         "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 3,
-        "firstName": 'Rao',
-        "lastName": 'B',
-        "mobileNo": '8812345673',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 4,
-        "firstName": 'Balamarthi',
-        "lastName": 'Venky',
-        "mobileNo": '8812345633',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 5,
-        "firstName": 'Venkatesh',
-        "lastName": 'Balamarthi',
-        "mobileNo": '8812345675',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 6,
-        "firstName": 'Vankat',
-        "lastName": 'B',
-        "mobileNo": '8812345671',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 7,
-        "firstName": 'Venkat Rao',
-        "lastName": 'B',
-        "mobileNo": '8812345688',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 8,
-        "firstName": 'B',
-        "lastName": 'Venky',
-        "mobileNo": '8812345666',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 9,
-        "firstName": 'Rao',
-        "lastName": 'B',
-        "mobileNo": '8812345673',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 10,
-        "firstName": 'Balamarthi',
-        "lastName": 'Venky',
-        "mobileNo": '8812345633',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 11,
-        "firstName": 'Venkatesh',
-        "lastName": 'Balamarthi',
-        "mobileNo": '8812345675',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-    {
-        "id": 12,
-        "firstName": 'BalamarthiN',
-        "lastName": 'Venky',
-        "mobileNo": '8812345633',
-        "email": 'EMAIL',
-        "address": "address",
-        "notes": "notes"
-    },
-]
+const isEnabledRemoteContacts: boolean = true;
+
+
+
 
 const ContactsList = () => {
-
     const [searchQuery, setSearchQuery] = useState('');
     const navigation = useNavigation();
+    const contacts = useSelector((state: RootState) => state.contacts.contacts);
+    const remoteContacts = useSelector((state: RootState) => state.contacts.remoteContacts);
+    const dispatch = useDispatch<AppDispatch>();
+
+     const mapContacts = (rawContacts: IRawContact[]): IAppContact[] => {
+            return rawContacts.map((contact, index) => ({
+                id: contact?.recordID,
+                firstName: contact.givenName || '',
+                lastName: contact.familyName || '',
+                mobileNo: contact.phoneNumbers?.[0]?.number || '',
+                email: contact.emailAddresses?.[0]?.email || '',
+                address: contact.postalAddresses?.[0]?.street || '',
+                notes: contact.note || '',
+                imageUri: contact.thumbnailPath || '',
+            }));
+        };
+    
+    useEffect(() => {
+        const fetchContacts = async () => {
+            try {
+                const permission = await Contacts.requestPermission();
+                dispatch(setLoader(true))
+                if (permission === 'authorized') {
+                    const allContacts = await Contacts.getAll();
+                    const result = mapContacts(allContacts);
+                    dispatch(gettContacts(result))
+                    dispatch(setLoader(false))
+
+                } else {
+                    dispatch(setLoader(false))
+                    Alert.alert('Permission Denied', 'Cannot access contacts without permission');
+                }
+            } catch (error) {
+                dispatch(setLoader(false))
+                Alert.alert('Error', 'Failed to load contacts');
+            } finally {
+            }
+        };
+
+        fetchContacts();
+    }, []);
 
     const styles = getStyles();
 
@@ -145,70 +93,33 @@ const ContactsList = () => {
         navigation.navigate(SCREEN_NAMES.ADD_CONTACT_SCREEN);
     }
 
-    const renderItem = (item: any, index: any, length: number): ReactNode => {
-        const isLastItem = index === length - 1;
+    const renderSectionHeader = ({section: {title}}: {section: {title: string}}) => {
         return (
-            <ContactItem
-                item={item}
-                index={index}
-                onPress={handleContactCard}
-                isLastItem={isLastItem}
-            />
+            <Text style={styles.sectionHeader}>{title}</Text>
         )
     }
-
-    const renderSectionHeader = ({section: {title, data}}: {section: {title: string, data: any[]}}) => {
-        return (
-            <View>
-                <Text style={{
-                    fontSize: 20,
-                    lineHeight: 28,
-                    color: '#D29965',
-                    fontWeight: '800',
-                    paddingVertical:4
-                }}>{title}</Text>
-                <View style={{
-                    backgroundColor: 'white',
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: '#B28155',
-
-                }}>
-                    <FlatList
-                        data={data}
-                        extraData={data}
-                        renderItem={({item,index})=>renderItem(item,index, data?.length)}
-                        keyExtractor={keyExtractor}
-                        ListEmptyComponent={renderListEmptyComponent}
-                        showsVerticalScrollIndicator={false}
-                        initialNumToRender={2}
-                    />
-
-                </View>
-                
-            </View>
-        )
-    }
-
-    const renderListEmptyComponent = () => {
-        return (
-            <Text>{'Empty'}</Text>
-        )
-    }
-    const keyExtractor = useCallback((item: IContactItemProps, index: number) => `${item?.id}-${index}`, [])
 
     const handleSearch = useCallback((text: string = '') => {
         setSearchQuery(text)
     }, [])
 
+    const renderSectionListEmptyComponent = () => {
+        return (
+            <View style={styles.sectionEmptyComponentView}>
+            <Text>{SCREEN_LABELS.NO_CONTACTS_FOUND}</Text>
+        </View>)
+
+    }
+
     const contactSections = useMemo(() => {
         const sections: any = {};
-        CONTACTS.forEach((contactItem) => {
+        const list = isEnabledRemoteContacts ? remoteContacts : contacts;
+        list?.forEach((contactItem: any) => {
             const firstLetter: string = contactItem?.firstName[0]?.toUpperCase()?.trim() || '';
             if (!sections[firstLetter]) {
                 sections[firstLetter] = {
                     title: firstLetter,
-                    data: [],
+                    data: [contactItem],
                 };
             } else {
                 sections[firstLetter].data.push(contactItem);
@@ -221,13 +132,13 @@ const ContactsList = () => {
         });
         return results
 
-    }, [])
+    }, [contacts, remoteContacts])
 
 
     const filteredSections = useMemo(() => {
         if (!searchQuery?.length) return contactSections;
 
-        const query = searchQuery.trim().toLowerCase();
+        const query = searchQuery.trim().toLowerCase() || '#';
 
         return contactSections.map(section => {
             const filteredData = section.data.filter(contact =>
@@ -236,13 +147,13 @@ const ContactsList = () => {
             );
             return {...section, data: filteredData};
         }).filter(section => section.data.length > 0);
-    }, [searchQuery])
+    }, [searchQuery, contactSections])
     
 
     return (
         <ScreenLayout
             isheaderShown={true}
-            headerLabel={'Contacts'}
+            headerLabel={SCREEN_TITLES.CONTACTS}
             showBackButton={false}
         >
             <View style={styles.main} >
@@ -250,15 +161,19 @@ const ContactsList = () => {
                 <SectionList
                     sections={filteredSections || []}
                     keyExtractor={(item) => item?.id?.toString()}
-                    renderItem={()=>null}
+                    extraData={contactSections}
+                    renderItem={({item, index, section}) => (
+                        <ContactItem
+                            item={item}
+                            index={index}
+                            onPress={handleContactCard}
+                            isLastItem={index === section.data.length - 1}
+                        />
+                    )}
                     renderSectionHeader={renderSectionHeader}
-                    ListEmptyComponent={() => {
-                        return (<View style={{
-                            flex: 1
-                        }}>
-                            <Text>{'No contacts found'}</Text>
-                        </View>)
-                    }}
+                    ListEmptyComponent={renderSectionListEmptyComponent}
+                    showsVerticalScrollIndicator={false}
+                    stickySectionHeadersEnabled={false}
                 />
                 <TouchableOpacity style={styles.addIcon} onPress={hanldeAddIcon}>
                     <Text style={styles.addIconText}>{"+"}</Text>

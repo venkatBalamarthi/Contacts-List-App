@@ -1,14 +1,10 @@
 import React from 'react'
 import {StyleSheet, View, Dimensions, Text, TouchableOpacity, Image} from 'react-native'
+import {IContactItemProps} from '../../types/contactslist';
+import {COLORS} from '../../config/colors';
 const {width} = Dimensions.get('window')
 
-interface IContactItemProps {
-    id: string;
-    firstName: string;
-    lastName: string;
-    mobileNo: string;
-    [key: string]: string | number | Date | boolean;
-}
+
 interface IRenderItem {
     item: IContactItemProps,
     index: number;
@@ -17,15 +13,26 @@ interface IRenderItem {
 }
 
 const ContactItem = ({item, onPress = () => {}, index = 0, isLastItem = false}: IRenderItem) => {
-    const onPressClick = () => onPress(item)
+    const onPressClick = () => onPress(item);
+    const name = item?.firstName[0]?.toUpperCase() + item?.lastName[0]?.toUpperCase();
     return (
         <TouchableOpacity
-            style={[styles.mainItem, {borderBottomWidth: isLastItem ? 0 : 1}]}
+            style={[styles.mainItem, {
+                borderBottomWidth: 1,
+                borderTopRightRadius: !index ? 12 : 0,
+                borderTopLeftRadius: !index ? 12 : 0,
+                borderBottomLeftRadius: isLastItem ? 12 : 0,
+                borderBottomRightRadius: isLastItem ? 12 : 0,
+                borderLeftWidth: 1,
+                borderRightWidth: 1,
+                borderTopWidth: index ? 0 : 1
+
+            }]}
             activeOpacity={1}
             onPress={onPressClick}
         >
             {!(item?.imageUri) ? <View style={styles.profilePlaceHolder}>
-                <Text style={styles.imagePlaceHolder}>{item?.firstName[0]?.toUpperCase()}</Text>
+                <Text style={styles.imagePlaceHolder}>{name}</Text>
             </View> : <Image
                 source={{uri: item?.imageUri || ''}}
                 style={styles.profileImge}
@@ -45,12 +52,16 @@ const styles = StyleSheet.create({
     mainItem: {
         width: width - 40,
         padding: 8,
-        borderColor: '#B28155',
+        borderColor: COLORS.PRIMARY_COLOR,
         flexDirection: 'row',
+        backgroundColor: COLORS.WHITE
     },
     profileImge: {
         width: 30,
         height: 30,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.PRIMARY_COLOR,
     },
     profilePlaceHolder: {
         borderRadius: 20,
@@ -59,8 +70,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         width: 30,
         height: 30,
-        borderColor: '#D29965',
-        backgroundColor: '#F6ECE2'
+        borderColor: COLORS.PRIMARY_COLOR,
+        backgroundColor: COLORS.SECONDARY_COLOR
     },
     contactDeatils: {
         paddingLeft: 10
@@ -70,7 +81,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     imagePlaceHolder: {
-        fontSize: 16,
-        lineHeight: 20,
+        fontSize: 12,
+        lineHeight: 18,
     }
 })

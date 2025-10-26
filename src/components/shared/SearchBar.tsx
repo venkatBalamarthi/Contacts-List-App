@@ -1,6 +1,6 @@
 import React from 'react';
 import {TextInput, StyleSheet, ViewStyle, Dimensions} from 'react-native';
-import normalizeSize from '../utils/commonUtils';
+import normalizeSize from '../../utils/commonUtils';
 const {width} = Dimensions.get('window')
 
 interface SearchBarProps {

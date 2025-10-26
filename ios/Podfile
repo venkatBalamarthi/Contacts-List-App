@@ -22,6 +22,8 @@ target 'contacts_list_app' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+  
+  pod 'react-native-contacts', :path => '../node_modules/react-native-contacts'
 
   post_install do |installer|
     react_native_post_install(

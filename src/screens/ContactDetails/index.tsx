@@ -1,15 +1,9 @@
 import {useRoute} from '@react-navigation/native'
 import React, {useMemo} from 'react'
 import {View, Image, Text, TouchableOpacity} from 'react-native'
-import ScreenLayout from '../../appconfig/ScreenLayout';
+import ScreenLayout from '../../components/layout';
 import getStyles from './styles';
-import {IMAGES} from '../../asserts/images';
-
-const DETAILS_FILEDS = {
-    "email": 'Email',
-    "address": "Address",
-    "notes": "Notes"
-}
+import {DETAILS_FILEDS, SCREEN_LABELS, SCREEN_TITLES} from '../../constants';
 
 const ContactDetails = () => {
     const route = useRoute();
@@ -24,7 +18,7 @@ const ContactDetails = () => {
     return (
         <ScreenLayout
             isheaderShown={true}
-            headerLabel={'Contact Details'}
+            headerLabel={SCREEN_TITLES.CONTACT_DETAILS}
         >
             <View style={styles.main} >
                 <View style={styles.topContainer}>
@@ -33,24 +27,20 @@ const ContactDetails = () => {
                         style={styles.profileImg}
                     /> :
                         <View style={styles.profileImg}>
-                            <Text style={{
-                                fontSize: 30,
-                                fontWeight: 'bold',
-                                color: '#B28155'
-                            }}>{firstName[0]?.toUpperCase()}</Text>
+                            <Text style={styles.profileText}>{firstName[0]?.toUpperCase()}</Text>
 
                         </View>}
                     <View style={styles.profileContainerView}>
                         <Text style={styles.profileName}>{firstName}</Text>
-                        <Text style={styles.mobileType}>{'mobile'}</Text>
+                        <Text style={styles.mobileType}>{SCREEN_LABELS.MOBILE}</Text>
                         <Text style={styles.mobileNumber}>{mobileNo}</Text>
                     </View>
                     <View style={styles.servicesView}>
                         <TouchableOpacity style={styles.serviceItem}>
-                            <Text>{"Call"}</Text>
+                            <Text>{SCREEN_LABELS.CALL}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.serviceItem}>
-                            <Text>{"Message"}</Text>
+                            <Text>{SCREEN_LABELS.MESSAGE}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -4,6 +4,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {navigationRef} from './RootNavigation';
 import ROUTER_NAMES from './RouterConstants';
 const Stack = createNativeStackNavigator();
+
 const SCREEN_OPTIONS = {
   headerShown: false,
 };

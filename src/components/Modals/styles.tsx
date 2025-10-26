@@ -4,6 +4,7 @@ const getStyles = () => {
   return StyleSheet.create({
     main: {
       flex: 1,
+      width:'100%',
       justifyContent: 'center',
       alignItems: 'center',
       alignSelf: 'center',

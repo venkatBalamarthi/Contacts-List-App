@@ -1,4 +1,5 @@
 import {Dimensions} from "react-native";
+import {IAppContact, IRawContact} from "../types/contactslist";
 
 const {width, height} = Dimensions.get('window')
 // Define base dimensions (e.g., dimensions of a standard screen like iPhone 11)
@@ -19,3 +20,16 @@ export const isValidEmail = (email: string = '') => {
     return emailRegex.test(email);
 }
 export default normalizeSize
+
+export const mapContacts = (rawContacts: IRawContact[]): IAppContact[] => {
+    return rawContacts.map((contact,) => ({
+        id: contact?.recordID,
+        firstName: contact.givenName || '',
+        lastName: contact.familyName || '',
+        mobileNo: contact.phoneNumbers?.[0]?.number || '',
+        email: contact.emailAddresses?.[0]?.email || '',
+        address: contact.postalAddresses?.[0]?.street || '',
+        notes: contact.note || '',
+        imageUri: contact.thumbnailPath || '',
+    }));
+};

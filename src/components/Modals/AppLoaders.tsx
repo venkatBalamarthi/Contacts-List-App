@@ -2,17 +2,18 @@ import React from 'react';
 import {ActivityIndicator, Dimensions} from 'react-native';
 import ReactNativeModal from 'react-native-modal';
 import getStyles from './styles';
+import {useSelector} from 'react-redux';
+import {RootState} from '../../store';
 const {width, height} = Dimensions.get('window');
 
 const AppLoader = () => {
-    //   const {showAppLoader} = useSelector(state => state?.commonReducer);
-const showAppLoader = false;
+const {isLoading = false} = useSelector<RootState>(state => state?.common);
   const styles = getStyles();
   return (
     <ReactNativeModal
-      isVisible={Boolean(showAppLoader)}
+      isVisible={Boolean(isLoading)}
       animationIn={'slideInDown'}
-      animationOut={'slideOutUp'}
+      animationOut={'slideOutDown'}
       animationInTiming={500}
       animationOutTiming={500}
       style={styles.main}

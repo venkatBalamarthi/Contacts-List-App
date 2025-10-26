@@ -1,8 +1,9 @@
 import React, {ReactNode} from 'react'
-import Header from './Header';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Dimensions, ViewStyle} from 'react-native';
-const {height} = Dimensions.get('window')
+import {StyleSheet, View, ViewStyle} from 'react-native';
+import Header from './Header';
+import {COLORS} from '../../config/colors';
+
 
 interface IScreenLayoutProps {
     isheaderShown?: boolean;
@@ -16,20 +17,28 @@ interface IScreenLayoutProps {
 
 const ScreenLayout = ({
     isheaderShown = true,
-    isFooterShown = false,
     children = null,
     headerLabel = '',
     showBackButton = true
 }: IScreenLayoutProps) => {
     return (
-        <SafeAreaView style={{flex:1, backgroundColor:'#0D9488'}} >
+        <SafeAreaView style={styles.main} >
+        <>
             {isheaderShown &&
                 <Header
                     label={headerLabel}
                     showBackButton={showBackButton}
                 />}
             {children && children}
+            </>
         </SafeAreaView>
     )
 }
 export default ScreenLayout;
+
+const styles = StyleSheet.create({
+    main: {
+        flex: 1,
+        backgroundColor: COLORS.SAFE_AREA_COLOR,
+    },
+})

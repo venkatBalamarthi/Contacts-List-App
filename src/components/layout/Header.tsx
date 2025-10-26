@@ -36,11 +36,7 @@ const Header = ({
                     <Text style={styles.backbuttonText}>{'close'}</Text>
                 </TouchableOpacity>
             }
-            <View style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-            }}>
+            <View style={styles.lavelView}>
                 <Text style={[styles.headerLabel, labelStyle]}>
                     {label || ''}
                 </Text>

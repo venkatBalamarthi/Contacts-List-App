@@ -24,6 +24,11 @@ const getStyles = () => {
             fontWeight: '600',
             color: 'white',
         },
+        lavelView: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+        }
     })
 }
 export default getStyles;

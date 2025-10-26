@@ -1,15 +1,16 @@
 import {Dimensions, StyleSheet} from "react-native"
 import normalizeSize from "../../utils/commonUtils";
+import {COLORS} from "../../config/colors";
 const {width, height} = Dimensions.get('window')
 
 const getStyles = () => {
     return StyleSheet.create({
         main: {
             height,
-            backgroundColor: '#F6ECE2',
+            backgroundColor: COLORS.SECONDARY_COLOR,
         },
         topContainer: {
-            backgroundColor: '#F6ECE2',
+            backgroundColor: COLORS.SECONDARY_COLOR,
             alignItems: 'center'
         },
         profileImg: {
@@ -19,8 +20,8 @@ const getStyles = () => {
             alignSelf: 'center',
             marginTop: 20,
             borderWidth: 1,
-            borderColor: '#D29965',
-            backgroundColor: 'white'
+            borderColor: COLORS.PRIMARY_COLOR,
+            backgroundColor: COLORS.WHITE,
         },
         profileContainerView: {
             alignItems: 'center',
@@ -54,10 +55,10 @@ const getStyles = () => {
             paddingHorizontal: 50,
             paddingVertical: 8,
             backgroundColor: 'white',
-            borderColor: '#D29965',
+            borderColor: COLORS.PRIMARY_COLOR,
         },
         profileDetails: {
-            backgroundColor: '#F6ECE2',
+            backgroundColor: COLORS.SECONDARY_COLOR,
             marginHorizontal: 40,
             marginTop: 20
         },
@@ -67,8 +68,8 @@ const getStyles = () => {
             paddingHorizontal: 8,
             paddingVertical: 12,
             borderBottomWidth: 1,
-            borderColor: '#D29965',
-            backgroundColor: 'white'
+            borderColor: COLORS.PRIMARY_COLOR,
+            backgroundColor: COLORS.WHITE
         },
         input: {
             width: width - normalizeSize(40),
@@ -76,42 +77,42 @@ const getStyles = () => {
             margin: normalizeSize(10),
             borderWidth: 1,
             borderRadius: normalizeSize(12),
-            borderColor: '#B28155',
-            backgroundColor: 'white',
+            borderColor: COLORS.PRIMARY_COLOR,
+            backgroundColor: COLORS.WHITE,
             paddingLeft: normalizeSize(12),
         },
         textInputStyle: {
             height: 50,
             width: '90%',
-            backgroundColor: 'white',
+            backgroundColor: COLORS.WHITE,
             borderRadius: 8,
             marginBottom: 12,
             paddingLeft: 10,
             borderWidth: 1,
-            borderColor: '#D29965',
+            borderColor: COLORS.PRIMARY_COLOR,
             marginLeft:20
         },
          textInputErrorStyle: {
             height: 50,
             width: '90%',
-            backgroundColor: 'white',
+            backgroundColor: COLORS.WHITE,
             borderRadius: 8,
             marginBottom: 8,
             paddingLeft: 10,
             borderWidth: 1,
-             borderColor: 'red',
+             borderColor: COLORS.RED,
             marginLeft:20
         },
         addContact: {
             alignSelf: 'center',
             borderWidth: 1,
             borderRadius: 8,
-            backgroundColor: 'black'
+            backgroundColor: COLORS.BLACCK
         },
         addContactText: {
             paddingHorizontal: 20,
             paddingVertical: 8,
-            color: 'white',
+            color: COLORS.WHITE,
             fontSize: 16,
             lineHeight: 22,
             fontWeight: '800'
@@ -123,7 +124,7 @@ const getStyles = () => {
         error: {
             marginLeft: 20,
             paddingBottom: 8,
-            color: 'red'
+            color: COLORS.RED
         }
     })
 }
