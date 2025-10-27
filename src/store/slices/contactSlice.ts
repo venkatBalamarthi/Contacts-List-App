@@ -25,9 +25,10 @@ const contactsSlice = createSlice({
         setError(state, action: PayloadAction<string | null>) {
             state.error = action.payload;
         },
-        addContact(state, action: PayloadAction<Omit<IContactItemProps, 'id'>>) {
-            const newId = Math.max(...state.contacts.map(c => parseInt(c.id.toString())), 0) + 1;
-            state.contacts.push({id: newId.toString(), ...action.payload});
+        addContact(state, action: PayloadAction<IContactItemProps>) {
+            const contactId = state.contacts?.length ? state.contacts?.length + 1 : 1;
+            const contactItem = {id: `${contactId}`, ...action.payload};
+            state.contacts.push(contactItem);
         },
         getContacts(state, action: PayloadAction<IAppContact[]>) {
             state.remoteContacts = action.payload;

@@ -1,5 +1,4 @@
 export interface IContactItemProps {
-    id: string;
     firstName: string;
     lastName: string;
     mobileNo: string;

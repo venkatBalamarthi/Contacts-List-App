@@ -62,7 +62,7 @@ const ContactsList = () => {
                 sections[firstLetter].data.push(contactItem);
             }
         })
-        const results = Object.values(sections);
+        const results = Object.values(sections) as Array<{title: string; data: any[]}>;
         results.sort((a: any, b: any) => a.title.localeCompare(b.title));
         results.forEach((sectionData) => {
             sectionData?.data.sort((a: any, b: any) => a.firstName.localeCompare(b.firstName));
@@ -77,13 +77,16 @@ const ContactsList = () => {
 
         const query = searchQuery.trim().toLowerCase() || '#';
 
-        return contactSections.map(section => {
-            const filteredData = section.data.filter(contact =>
+        return contactSections.map((section: {title: string, data: any[]}) => {
+            const filteredData = (section?.data || [])?.filter((contact: any) =>
                 contact.firstName.toLowerCase().includes(query) ||
                 contact.mobileNo.toLowerCase().includes(query)
             );
-            return {...section, data: filteredData};
-        }).filter(section => section.data.length > 0);
+            return {
+                title: section.title,
+                data: filteredData
+            };
+        }).filter((section: {title: string, data: any[]}) => section.data.length > 0);
     }, [searchQuery, contactSections])
     
 
